@@ -1,9 +1,12 @@
-document.addEventListener('DOMContentLoaded', function() {
+document.addEventListener('DOMContentLoaded', async function () {
   const scrapeBtn = document.getElementById('scrapeBtn');
   const statusBox = document.getElementById('status');
   const progressContainer = document.getElementById('progressContainer');
   const progressFill = document.getElementById('progressFill');
   const progressText = document.getElementById('progressText');
+
+  // Auto-detect Shopify store on popup open
+  await detectShopifyStore();
 
   // Set up message listener BEFORE button click
   let messageListener = null;
@@ -76,9 +79,109 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   });
 
+  function handleScrapingError(error) {
+    updateStatus('Error: ' + error, 'error');
+    resetButton();
+  }
+
+  function resetButton() {
+    scrapeBtn.disabled = false;
+    scrapeBtn.innerHTML = `
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Start Export
+    `;
+    scrapeBtn.onclick = null;
+    progressContainer.style.display = 'none';
+  }
+
+  async function detectShopifyStore() {
+    try {
+      const [tab] = await chrome.tabs.query({ active: true, currentWindow: true });
+
+      if (!tab.url || tab.url.startsWith('chrome://') || tab.url.startsWith('chrome-extension://')) {
+        updateStatus('Please navigate to a website first', 'warning');
+        scrapeBtn.disabled = true;
+        return;
+      }
+
+      // Inject detection script
+      const results = await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: () => {
+          // Check if Shopify
+          const isShopify = window.Shopify ||
+            document.querySelector('meta[name="shopify-checkout-api-token"]') ||
+            document.querySelector('script[src*="shopify"]') ||
+            window.ShopifyAnalytics;
+
+          // Try to get product count from Shopify API
+          let productCount = 0;
+          if (isShopify) {
+            try {
+              const pathParts = window.location.pathname.split('/');
+              const collectionHandle = pathParts.includes('collections') ?
+                pathParts[pathParts.indexOf('collections') + 1] : null;
+
+              // Return info for async fetch
+              return {
+                isShopify: true,
+                baseUrl: window.location.origin,
+                collectionHandle: collectionHandle
+              };
+            } catch (e) {
+              return { isShopify: true, baseUrl: window.location.origin };
+            }
+          }
+
+          return { isShopify: false };
+        }
+      });
+
+      const result = results[0].result;
+
+      if (result.isShopify) {
+        // Try to fetch product count
+        try {
+          let url = `${result.baseUrl}/products.json?limit=1`;
+          if (result.collectionHandle) {
+            url = `${result.baseUrl}/collections/${result.collectionHandle}/products.json?limit=1`;
+          }
+
+          const response = await fetch(url);
+          const data = await response.json();
+
+          // Get total count from headers or estimate
+          const productCount = data.products ? data.products.length : 0;
+
+          if (result.collectionHandle) {
+            updateStatus(`✓ Shopify Store Detected | Collection: ${result.collectionHandle}`, 'success');
+          } else {
+            updateStatus(`✓ Shopify Store Detected | Ready to scrape`, 'success');
+          }
+          scrapeBtn.disabled = false;
+        } catch (e) {
+          updateStatus('✓ Shopify Store Detected | Ready to scrape', 'success');
+          scrapeBtn.disabled = false;
+        }
+      } else {
+        updateStatus('⚠ Not a Shopify store - Please visit a Shopify store', 'error');
+        scrapeBtn.disabled = true;
+      }
+    } catch (error) {
+      console.error('Detection error:', error);
+      updateStatus('Ready to export products', '');
+      scrapeBtn.disabled = false;
+    }
+  }
+
   function updateStatus(message, type = '') {
     statusBox.className = 'status-box ' + type;
-    statusBox.innerHTML = '<p>' + message + '</p>';
+    const indicator = type ? '<div class="status-indicator"></div>' : '';
+    statusBox.innerHTML = indicator + '<p>' + message + '</p>';
   }
 
   function updateProgress(current, total) {
