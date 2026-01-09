@@ -43,28 +43,28 @@ function escapeCSV(str) {
 - ✅ Image URLs
 
 ### 3. HTML Tag Stripping
-SEO descriptions ab HTML tags ke bina:
+SEO descriptions are now without HTML tags:
 ```javascript
 escapeCSV((product.description || '').replace(/<[^>]*>/g, '').substring(0, 160))
 ```
 
 ## Testing Steps
 
-1. **Extension Reload**
-   - Chrome mein `chrome://extensions/` open karein
-   - Shopify Scraper ke neeche reload button (🔄) click karein
+1. **Reload Extension**
+   - Open `chrome://extensions/` in Chrome
+   - Click the reload button (🔄) under Shopify Scraper
 
 2. **Scrape Products**
-   - Shopify store par jaayein
-   - Extension click karein
-   - "Start Scraping" button dabayein
-   - CSV download hone ka wait karein
+   - Visit a Shopify store
+   - Click the extension icon
+   - Click "Start Scraping" button
+   - Wait for CSV to download
 
 3. **Import CSV**
-   - Shopify Admin open karein
-   - Products > Import jaayein
-   - Downloaded CSV file select karein
-   - Import karein
+   - Open Shopify Admin
+   - Go to Products > Import
+   - Select the downloaded CSV file
+   - Import the file
 
 ## Expected Result
 ✅ CSV should import without any errors
@@ -81,7 +81,7 @@ escapeCSV((product.description || '').replace(/<[^>]*>/g, '').substring(0, 160))
 - ❌ Special characters in URLs
 
 ## CSV Format Compliance
-CSV ab fully Shopify-compatible hai:
+CSV is now fully Shopify-compatible:
 - Proper RFC 4180 CSV format
 - All special characters escaped
 - Consistent field count

@@ -1,49 +1,55 @@
-# 🛍️ Shopify Product Scraper
+# 🛍️ Scrapify
 
-Ek powerful Chrome extension jo kisi bhi Shopify store se saari products ko scrape karke Shopify-compatible CSV file mein export karta hai.
+A powerful Chrome extension that scrapes all products from any Shopify store and exports them to a Shopify-compatible CSV file.
 
 ## ✨ Features
 
-- **Complete Product Data**: Saari product details extract karta hai including:
-  - Product title, description
-  - Price aur compare-at price
-  - Vendor aur product type
+- **Complete Product Data**: Extracts all product details including:
+  - Product title and description
+  - Price and compare-at price
+  - Vendor and product type
   - Tags
-  - Product images (saari images)
+  - All product images
   - Variants (size, color, etc.)
-  - SKU aur barcodes
+  - SKU and barcodes
 
-- **Shopify-Ready CSV**: CSV file bilkul Shopify ke import format mein hoti hai, seedha import kar sakte hain
+- **Shopify-Ready CSV**: CSV file is in Shopify's exact import format, ready for direct import
 
 - **Multiple Scraping Methods**: 
-  - Shopify API se data fetch karta hai (fastest)
-  - Agar API available nahi hai to DOM scraping use karta hai
+  - Fetches data from Shopify API (fastest method)
+  - Falls back to DOM scraping if API is unavailable
 
-- **Progress Tracking**: Real-time progress bar dikhata hai kitne products scrape ho chuke hain
+- **Progress Tracking**: Real-time progress bar shows how many products have been scraped
 
 - **Beautiful UI**: Modern gradient design with smooth animations
 
 ## 📦 Installation
 
-1. Is repository ko download ya clone karein
-2. Chrome browser mein `chrome://extensions/` open karein
-3. "Developer mode" enable karein (top right corner)
-4. "Load unpacked" button click karein
-5. `shopify scraper` folder select karein
-6. Extension install ho jayega!
+### Chrome Web Store (Recommended)
+1. Visit the [Chrome Web Store](https://chrome.google.com/webstore)
+2. Search for "Scrapify"
+3. Click "Add to Chrome"
+4. Extension is now installed!
+
+### Manual Installation (Developer Mode)
+1. Download or clone this repository
+2. Open `chrome://extensions/` in Chrome browser
+3. Enable "Developer mode" (top right corner)
+4. Click "Load unpacked" button
+5. Select the downloaded folder
 
 ## 🚀 Usage
 
-1. Kisi bhi Shopify store ko open karein
-2. Products page ya collection page par jaayein
-3. Extension icon click karein
-4. "Start Scraping" button click karein
-5. Wait karein jab tak saari products scrape ho jayein
-6. CSV file automatically download ho jayegi
+1. Open any Shopify store
+2. Navigate to a products page or collection page
+3. Click the Scrapify extension icon
+4. Click "Start Scraping" button
+5. Wait while all products are scraped
+6. CSV file will download automatically
 
 ## 📝 CSV Format
 
-CSV file mein yeh saari fields hongi:
+The CSV file includes all these fields:
 - Handle
 - Title
 - Body (HTML)
@@ -56,44 +62,44 @@ CSV file mein yeh saari fields hongi:
 - Pricing
 - Images
 - SEO information
-- Aur bhi bohot kuch!
+- And much more!
 
 ## 🎯 Best Practices
 
-1. **Collection Pages**: Best results ke liye collection pages use karein
-2. **Internet Speed**: Achi internet speed se scraping fast hogi
-3. **Large Stores**: Agar store mein bohot zyada products hain to thoda time lagega
+1. **Collection Pages**: Use collection pages for best results
+2. **Internet Speed**: Faster internet speeds result in faster scraping
+3. **Large Stores**: Stores with many products may take some time to scrape
 
 ## 🔧 Technical Details
 
 - **Manifest Version**: 3 (latest)
 - **Permissions**: Active tab, scripting, downloads
 - **API Support**: Shopify products.json API
-- **Fallback**: DOM scraping agar API available nahi hai
+- **Fallback**: DOM scraping if API is unavailable
 
 ## 🐛 Troubleshooting
 
 **"This does not appear to be a Shopify store"**
-- Make sure aap Shopify store par hain
-- URL check karein
+- Make sure you're on a Shopify store
+- Check the URL
 
 **"No products found"**
-- Products page ya collection page par jaayein
-- Home page par scraping nahi hogi
+- Navigate to a products page or collection page
+- Scraping won't work on the home page
 
 **"Could not extract product data"**
-- Kuch stores custom themes use karte hain
-- Try karein different collection page
+- Some stores use custom themes
+- Try a different collection page
 
 ## 💡 Tips
 
-- Scraping se pehle make sure karein ke page fully load ho gaya hai
-- Agar bohot saari products hain to patience rakhein
-- CSV file ko Shopify admin mein Products > Import se upload karein
+- Make sure the page is fully loaded before scraping
+- Be patient if there are many products
+- Upload the CSV file in Shopify admin via Products → Import
 
 ## 🙏 Support
 
-Agar koi issue ho ya suggestion ho to feel free to reach out!
+If you have any issues or suggestions, feel free to reach out!
 
 ## 📄 License
 
@@ -101,4 +107,6 @@ Free to use for personal and commercial purposes.
 
 ---
 
-**Made with ❤️ for Shopify merchants**
+**Made with ❤️ by Scrapify Team**
+
+**Scrapify** - The easiest way to export Shopify products
