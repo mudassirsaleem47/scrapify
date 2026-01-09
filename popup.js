@@ -20,7 +20,12 @@ document.addEventListener('DOMContentLoaded', function() {
 
       // Disable button
       scrapeBtn.disabled = true;
-      scrapeBtn.innerHTML = '<span class="btn-icon">⏳</span> Scraping...';
+      scrapeBtn.innerHTML = `
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="spinning">
+          <path d="M12 2V6M12 18V22M4.93 4.93L7.76 7.76M16.24 16.24L19.07 19.07M2 12H6M18 12H22M4.93 19.07L7.76 16.24M16.24 7.76L19.07 4.93" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        </svg>
+        Scraping...
+      `;
       
       // Show progress
       progressContainer.style.display = 'block';
@@ -83,18 +88,38 @@ document.addEventListener('DOMContentLoaded', function() {
     updateStatus(`Scraping products... ${current} of ${total}`, 'warning');
   }
 
+  let scrapedCSV = null;
+  let scrapedFilename = null;
+
   function handleScrapingComplete(products) {
     updateStatus(`Successfully scraped ${products.length} products!`, 'success');
     progressFill.style.width = '100%';
     
-    // Generate and download CSV
-    const csv = generateShopifyCSV(products);
-    downloadCSV(csv, `shopify-products-${Date.now()}.csv`);
+    // Generate CSV but don't download yet
+    scrapedCSV = generateShopifyCSV(products);
+    scrapedFilename = `shopify-products-${Date.now()}.csv`;
     
-    setTimeout(() => {
-      resetButton();
-      updateStatus('CSV downloaded successfully! ✅', 'success');
-    }, 1000);
+    // Change button to download button
+    scrapeBtn.disabled = false;
+    scrapeBtn.innerHTML = `
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Download CSV
+    `;
+    scrapeBtn.onclick = function () {
+      if (scrapedCSV) {
+        downloadCSV(scrapedCSV, scrapedFilename);
+        updateStatus('CSV downloaded successfully!', 'success');
+        setTimeout(() => {
+          resetButton();
+          scrapedCSV = null;
+          scrapedFilename = null;
+        }, 2000);
+      }
+    };
   }
 
   function handleScrapingError(error) {
@@ -104,7 +129,16 @@ document.addEventListener('DOMContentLoaded', function() {
 
   function resetButton() {
     scrapeBtn.disabled = false;
-    scrapeBtn.innerHTML = '<span class="btn-icon">📥</span> Start Scraping';
+    scrapeBtn.innerHTML = `
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <path d="M21 15V19C21 19.5304 20.7893 20.0391 20.4142 20.4142C20.0391 20.7893 19.5304 21 19 21H5C4.46957 21 3.96086 20.7893 3.58579 20.4142C3.21071 20.0391 3 19.5304 3 19V15" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M7 10L12 15L17 10" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+        <path d="M12 15V3" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      Start Export
+    `;
+    scrapeBtn.onclick = null;
+    progressContainer.style.display = 'none';
   }
 
   function generateShopifyCSV(products) {
