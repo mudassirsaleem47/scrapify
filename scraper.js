@@ -15,9 +15,22 @@
     const products = [];
     let scrapedCount = 0;
 
+    // Get export mode (set by popup.js)
+    const exportMode = window.EXPORT_MODE || 'collection';
+    console.log('Export mode:', exportMode);
+
     // Method 1: Try to get products from Shopify API
     try {
-      const allProducts = await fetchAllProductsFromAPI();
+      let allProducts;
+
+      if (exportMode === 'all') {
+        // Fetch ALL products from the store
+        allProducts = await fetchAllProductsFromAPI();
+      } else {
+        // Fetch only current collection products
+        allProducts = await fetchCurrentCollectionProducts();
+      }
+
       if (allProducts && allProducts.length > 0) {
         console.log(`Found ${allProducts.length} products via API`);
         chrome.runtime.sendMessage({
@@ -113,6 +126,7 @@ async function fetchAllProductsFromAPI() {
           type: product.product_type || '',
           tags: product.tags ? product.tags.join(', ') : '',
           handle: product.handle,
+          collections: [], // Will be populated later
           images: product.images ? product.images.map(img => img.src) : [],
           variants: product.variants ? product.variants.map(variant => ({
             option1Name: product.options[0] ? product.options[0].name : '',
@@ -157,6 +171,168 @@ async function fetchAllProductsFromAPI() {
 
     } catch (error) {
       console.error('Error fetching page:', page, error);
+      break;
+    }
+  }
+
+  // Now fetch collections for each product
+  console.log('Fetching collection information...');
+  await enrichProductsWithCollections(allProducts);
+
+  return allProducts;
+}
+
+// Enrich products with collection information
+async function enrichProductsWithCollections(products) {
+  console.log('Enriching products with collection data...');
+
+  for (let i = 0; i < products.length; i++) {
+    try {
+      const product = products[i];
+      const productUrl = `/products/${product.handle}.json`;
+      const response = await fetch(productUrl);
+
+      if (response.ok) {
+        const data = await response.json();
+
+        // Get collections from product data
+        if (data.product && data.product.collections) {
+          product.collections = data.product.collections.map(c => c.title);
+        } else {
+          // Fallback: try to get from tags or leave empty
+          product.collections = [];
+        }
+      }
+
+      // Update progress
+      if (i % 10 === 0) {
+        chrome.runtime.sendMessage({
+          action: 'updateProgress',
+          current: i,
+          total: products.length
+        });
+      }
+
+      // Small delay to avoid rate limiting
+      if (i % 20 === 0) {
+        await new Promise(resolve => setTimeout(resolve, 100));
+      }
+
+    } catch (error) {
+      console.error('Error enriching product:', products[i].handle, error);
+      products[i].collections = [];
+    }
+  }
+
+  console.log('Collection enrichment complete');
+}
+
+// Fetch products from current collection only
+async function fetchCurrentCollectionProducts() {
+  const allProducts = [];
+
+  // Try to detect collection handle from URL
+  const urlPath = window.location.pathname;
+  let collectionHandle = null;
+
+  // Check if we're on a collection page
+  const collectionMatch = urlPath.match(/\/collections\/([^\/]+)/);
+  if (collectionMatch) {
+    collectionHandle = collectionMatch[1];
+  }
+
+  if (!collectionHandle) {
+    console.log('Not on a collection page, falling back to all products');
+    return await fetchAllProductsFromAPI();
+  }
+
+  console.log('Fetching collection:', collectionHandle);
+
+  // Get collection title
+  let collectionTitle = collectionHandle.replace(/-/g, ' ').replace(/\b\w/g, l => l.toUpperCase());
+
+  // Try to get actual collection title from page
+  try {
+    const collectionTitleElement = document.querySelector('h1, .collection-title, [class*="collection-title"]');
+    if (collectionTitleElement) {
+      collectionTitle = collectionTitleElement.textContent.trim();
+    }
+  } catch (e) {
+    console.log('Could not get collection title from page');
+  }
+
+  let page = 1;
+  const limit = 250;
+
+  while (true) {
+    try {
+      const url = `/collections/${collectionHandle}/products.json?limit=${limit}&page=${page}`;
+      const response = await fetch(url);
+
+      if (!response.ok) {
+        break;
+      }
+
+      const data = await response.json();
+
+      if (!data.products || data.products.length === 0) {
+        break;
+      }
+
+      // Process each product (same as fetchAllProductsFromAPI)
+      for (const product of data.products) {
+        const processedProduct = {
+          title: product.title,
+          description: product.body_html || '',
+          vendor: product.vendor || '',
+          type: product.product_type || '',
+          tags: product.tags ? product.tags.join(', ') : '',
+          handle: product.handle,
+          collections: [collectionTitle], // Add current collection
+          images: product.images ? product.images.map(img => img.src) : [],
+          variants: product.variants ? product.variants.map(variant => ({
+            option1Name: product.options[0] ? product.options[0].name : '',
+            option1Value: variant.option1 || '',
+            option2Name: product.options[1] ? product.options[1].name : '',
+            option2Value: variant.option2 || '',
+            option3Name: product.options[2] ? product.options[2].name : '',
+            option3Value: variant.option3 || '',
+            price: variant.price,
+            compareAtPrice: variant.compare_at_price || '',
+            sku: variant.sku || '',
+            barcode: variant.barcode || '',
+            weight: variant.weight || '',
+            image: variant.image_id ? product.images.find(img => img.id === variant.image_id)?.src : ''
+          })) : []
+        };
+
+        // If no variants, add product price
+        if (processedProduct.variants.length === 0 && product.variants && product.variants[0]) {
+          processedProduct.price = product.variants[0].price;
+          processedProduct.compareAtPrice = product.variants[0].compare_at_price || '';
+        }
+
+        allProducts.push(processedProduct);
+      }
+
+      chrome.runtime.sendMessage({
+        action: 'updateProgress',
+        current: allProducts.length,
+        total: allProducts.length + limit
+      });
+
+      // If we got less than the limit, we're done
+      if (data.products.length < limit) {
+        break;
+      }
+
+      page++;
+
+      // Add a small delay to avoid rate limiting
+      await new Promise(resolve => setTimeout(resolve, 100));
+
+    } catch (error) {
+      console.error('Error fetching collection page:', page, error);
       break;
     }
   }

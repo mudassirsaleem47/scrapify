@@ -21,18 +21,16 @@ document.addEventListener('DOMContentLoaded', async function () {
         return;
       }
 
+      // Get selected export mode
+      const exportMode = document.querySelector('input[name="exportMode"]:checked').value;
+
       // Disable button
       scrapeBtn.disabled = true;
-      scrapeBtn.innerHTML = `
-        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" class="spinning">
-          <path d="M12 2V6M12 18V22M4.93 4.93L7.76 7.76M16.24 16.24L19.07 19.07M2 12H6M18 12H22M4.93 19.07L7.76 16.24M16.24 7.76L19.07 4.93" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
-        </svg>
-        Scraping...
-      `;
+      scrapeBtn.innerHTML = '<span class="btn-icon">⏳</span> Scraping...';
       
       // Show progress
       progressContainer.style.display = 'block';
-      updateStatus('Starting scraper...', 'warning');
+      updateStatus(exportMode === 'all' ? 'Fetching all products...' : 'Scraping current collection...', 'warning');
 
       // Remove old listener if exists
       if (messageListener) {
@@ -61,6 +59,13 @@ document.addEventListener('DOMContentLoaded', async function () {
 
       // Small delay to ensure listener is ready
       await new Promise(resolve => setTimeout(resolve, 100));
+
+      // Inject export mode as a global variable first
+      await chrome.scripting.executeScript({
+        target: { tabId: tab.id },
+        func: (mode) => { window.EXPORT_MODE = mode; },
+        args: [exportMode]
+      });
 
       // Now inject and execute scraper
       await chrome.scripting.executeScript({
@@ -311,6 +316,13 @@ document.addEventListener('DOMContentLoaded', async function () {
       const cleanDescription = (product.description || '').replace(/<[^>]*>/g, '').trim();
       const seoDescription = cleanDescription.substring(0, 320);
       
+      // Add collection names to tags with "Collection:" prefix
+      let allTags = product.tags || '';
+      if (product.collections && product.collections.length > 0) {
+        const collectionTags = product.collections.map(c => `Collection:${c}`).join(', ');
+        allTags = allTags ? `${allTags}, ${collectionTags}` : collectionTags;
+      }
+
       // If product has variants
       if (product.variants && product.variants.length > 0) {
         product.variants.forEach((variant, variantIndex) => {
@@ -325,12 +337,12 @@ document.addEventListener('DOMContentLoaded', async function () {
             isFirstVariant ? escapeCSV(cleanDescription) : '',
             // Vendor - only on first variant
             isFirstVariant ? escapeCSV(product.vendor || '') : '',
-            // Product category - empty
+            // Product category - empty (Shopify only accepts Google taxonomy)
             '',
             // Type - only on first variant
             isFirstVariant ? escapeCSV(product.type || '') : '',
-            // Tags - only on first variant
-            isFirstVariant ? escapeCSV(product.tags || '') : '',
+            // Tags - only on first variant (includes collections)
+            isFirstVariant ? escapeCSV(allTags) : '',
             // Published on online store - only on first variant
             isFirstVariant ? 'TRUE' : '',
             // Status - only on first variant
@@ -430,12 +442,12 @@ document.addEventListener('DOMContentLoaded', async function () {
           escapeCSV(cleanDescription),
           // Vendor
           escapeCSV(product.vendor || ''),
-          // Product category - empty
+          // Product category - empty (Shopify only accepts Google taxonomy)
           '',
           // Type
           escapeCSV(product.type || ''),
-          // Tags
-          escapeCSV(product.tags || ''),
+          // Tags (includes collections)
+          escapeCSV(allTags),
           // Published on online store
           'TRUE',
           // Status
