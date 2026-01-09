@@ -1,0 +1,70 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Shopify Scraper</title>
+  <link rel="stylesheet" href="popup.css">
+</head>
+<body>
+  <div class="container">
+    <div class="header">
+      <h1>Shopify Scraper</h1>
+      <p class="subtitle">Export products to CSV</p>
+    </div>
+
+    <div class="content">
+      <div id="status" class="status-box">
+        <p>Ready to scrape products</p>
+      </div>
+
+      <div class="progress-container" id="progressContainer" style="display: none;">
+        <div class="progress-bar">
+          <div class="progress-fill" id="progressFill"></div>
+        </div>
+        <p class="progress-text" id="progressText">0 / 0 products</p>
+      </div>
+
+      <button id="scrapeBtn" class="btn btn-primary">
+        <span class="btn-icon">📥</span>
+        Start Scraping
+      </button>
+
+      <div class="info-box">
+        <h3>Instructions:</h3>
+        <ol>
+          <li>Navigate to any Shopify store</li>
+          <li>Go to the products page or collection</li>
+          <li>Click "Start Scraping"</li>
+          <li>Wait for the CSV to download</li>
+        </ol>
+      </div>
+
+      <div class="features">
+        <div class="feature">
+          <span class="feature-icon">✅</span>
+          <span>All product details</span>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">🖼️</span>
+          <span>Product images</span>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">🎨</span>
+          <span>Variants & options</span>
+        </div>
+        <div class="feature">
+          <span class="feature-icon">💰</span>
+          <span>Pricing info</span>
+        </div>
+      </div>
+    </div>
+
+    <div class="footer">
+      <p>Made with ❤️ for Maria</p>
+    </div>
+  </div>
+
+  <script src="popup.js"></script>
+</body>
+</html>

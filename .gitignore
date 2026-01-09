@@ -1,0 +1,17 @@
+# Node modules (agar future mein use ho)
+node_modules/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# IDE files
+.vscode/
+.idea/
+
+# Temporary files
+*.tmp
+*.log
+
+# CSV output files (optional - agar aap yeh bhi push karna chahte hain toh is line ko remove kar dein)
+# *.csv
