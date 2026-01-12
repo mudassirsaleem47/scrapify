@@ -128,20 +128,33 @@ async function fetchAllProductsFromAPI() {
           handle: product.handle,
           collections: [], // Will be populated later
           images: product.images ? product.images.map(img => img.src) : [],
-          variants: product.variants ? product.variants.map(variant => ({
-            option1Name: product.options[0] ? product.options[0].name : '',
-            option1Value: variant.option1 || '',
-            option2Name: product.options[1] ? product.options[1].name : '',
-            option2Value: variant.option2 || '',
-            option3Name: product.options[2] ? product.options[2].name : '',
-            option3Value: variant.option3 || '',
-            price: variant.price,
-            compareAtPrice: variant.compare_at_price || '',
-            sku: variant.sku || '',
-            barcode: variant.barcode || '',
-            weight: variant.weight || '',
-            image: variant.image_id ? product.images.find(img => img.id === variant.image_id)?.src : ''
-          })) : []
+          variants: product.variants ? product.variants.map(variant => {
+            // Get variant-specific image or fallback to first product image
+            let variantImage = '';
+            if (variant.image_id) {
+              const matchedImage = product.images.find(img => img.id === variant.image_id);
+              variantImage = matchedImage ? matchedImage.src : '';
+            }
+            // If no variant-specific image, use first product image
+            if (!variantImage && product.images && product.images.length > 0) {
+              variantImage = product.images[0].src;
+            }
+
+            return {
+              option1Name: product.options[0] ? product.options[0].name : '',
+              option1Value: variant.option1 || '',
+              option2Name: product.options[1] ? product.options[1].name : '',
+              option2Value: variant.option2 || '',
+              option3Name: product.options[2] ? product.options[2].name : '',
+              option3Value: variant.option3 || '',
+              price: variant.price,
+              compareAtPrice: variant.compare_at_price || '',
+              sku: variant.sku || '',
+              barcode: variant.barcode || '',
+              weight: variant.weight || '',
+              image: variantImage
+            };
+          }) : []
         };
 
         // If no variants, add product price
@@ -290,20 +303,33 @@ async function fetchCurrentCollectionProducts() {
           handle: product.handle,
           collections: [collectionTitle], // Add current collection
           images: product.images ? product.images.map(img => img.src) : [],
-          variants: product.variants ? product.variants.map(variant => ({
-            option1Name: product.options[0] ? product.options[0].name : '',
-            option1Value: variant.option1 || '',
-            option2Name: product.options[1] ? product.options[1].name : '',
-            option2Value: variant.option2 || '',
-            option3Name: product.options[2] ? product.options[2].name : '',
-            option3Value: variant.option3 || '',
-            price: variant.price,
-            compareAtPrice: variant.compare_at_price || '',
-            sku: variant.sku || '',
-            barcode: variant.barcode || '',
-            weight: variant.weight || '',
-            image: variant.image_id ? product.images.find(img => img.id === variant.image_id)?.src : ''
-          })) : []
+          variants: product.variants ? product.variants.map(variant => {
+            // Get variant-specific image or fallback to first product image
+            let variantImage = '';
+            if (variant.image_id) {
+              const matchedImage = product.images.find(img => img.id === variant.image_id);
+              variantImage = matchedImage ? matchedImage.src : '';
+            }
+            // If no variant-specific image, use first product image
+            if (!variantImage && product.images && product.images.length > 0) {
+              variantImage = product.images[0].src;
+            }
+
+            return {
+              option1Name: product.options[0] ? product.options[0].name : '',
+              option1Value: variant.option1 || '',
+              option2Name: product.options[1] ? product.options[1].name : '',
+              option2Value: variant.option2 || '',
+              option3Name: product.options[2] ? product.options[2].name : '',
+              option3Value: variant.option3 || '',
+              price: variant.price,
+              compareAtPrice: variant.compare_at_price || '',
+              sku: variant.sku || '',
+              barcode: variant.barcode || '',
+              weight: variant.weight || '',
+              image: variantImage
+            };
+          }) : []
         };
 
         // If no variants, add product price
@@ -442,20 +468,33 @@ async function fetchProductDetails(productUrl) {
       tags: product.tags ? product.tags.join(', ') : '',
       handle: product.handle,
       images: product.images ? product.images.map(img => img.src) : [],
-      variants: product.variants ? product.variants.map(variant => ({
-        option1Name: product.options[0] ? product.options[0].name : '',
-        option1Value: variant.option1 || '',
-        option2Name: product.options[1] ? product.options[1].name : '',
-        option2Value: variant.option2 || '',
-        option3Name: product.options[2] ? product.options[2].name : '',
-        option3Value: variant.option3 || '',
-        price: variant.price,
-        compareAtPrice: variant.compare_at_price || '',
-        sku: variant.sku || '',
-        barcode: variant.barcode || '',
-        weight: variant.weight || '',
-        image: variant.image_id ? product.images.find(img => img.id === variant.image_id)?.src : ''
-      })) : []
+      variants: product.variants ? product.variants.map(variant => {
+        // Get variant-specific image or fallback to first product image
+        let variantImage = '';
+        if (variant.image_id) {
+          const matchedImage = product.images.find(img => img.id === variant.image_id);
+          variantImage = matchedImage ? matchedImage.src : '';
+        }
+        // If no variant-specific image, use first product image
+        if (!variantImage && product.images && product.images.length > 0) {
+          variantImage = product.images[0].src;
+        }
+
+        return {
+          option1Name: product.options[0] ? product.options[0].name : '',
+          option1Value: variant.option1 || '',
+          option2Name: product.options[1] ? product.options[1].name : '',
+          option2Value: variant.option2 || '',
+          option3Name: product.options[2] ? product.options[2].name : '',
+          option3Value: variant.option3 || '',
+          price: variant.price,
+          compareAtPrice: variant.compare_at_price || '',
+          sku: variant.sku || '',
+          barcode: variant.barcode || '',
+          weight: variant.weight || '',
+          image: variantImage
+        };
+      }) : []
     };
   } catch (error) {
     console.error('Error fetching product details:', error);

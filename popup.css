@@ -767,4 +767,20 @@ body {
   font-size: 11px;
     color: #9ca3af;
     font-weight: 500;
+    margin-bottom: 4px;
+    }
+    
+    .footer p:last-child {
+      margin-bottom: 0;
+    }
+    
+    .last-updated {
+      font-size: 10px;
+      color: #6b7280;
+      font-weight: 400;
+    }
+    
+    .last-updated span {
+      font-weight: 500;
+      color: #96bf48;
 }
