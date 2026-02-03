@@ -182,11 +182,17 @@ document.addEventListener('DOMContentLoaded', async function () {
               const collectionHandle = pathParts.includes('collections') ?
                 pathParts[pathParts.indexOf('collections') + 1] : null;
 
+              // Check if on product page
+              const productMatch = window.location.pathname.match(/\/products\/([^\/\?]+)/);
+              const productHandle = productMatch ? productMatch[1] : null;
+
               // Return info for async fetch
               return {
                 isShopify: true,
                 baseUrl: window.location.origin,
-                collectionHandle: collectionHandle
+                collectionHandle: collectionHandle,
+                productHandle: productHandle,
+                isProductPage: !!productHandle
               };
             } catch (e) {
               return { isShopify: true, baseUrl: window.location.origin };
@@ -200,29 +206,23 @@ document.addEventListener('DOMContentLoaded', async function () {
       const result = results[0].result;
 
       if (result.isShopify) {
-        // Try to fetch product count
-        try {
-          let url = `${result.baseUrl}/products.json?limit=1`;
-          if (result.collectionHandle) {
-            url = `${result.baseUrl}/collections/${result.collectionHandle}/products.json?limit=1`;
-          }
+        // Check export mode on status update
+        const getSelectedMode = () => {
+          const selected = document.querySelector('input[name="exportMode"]:checked');
+          return selected ? selected.value : 'collection';
+        };
 
-          const response = await fetch(url);
-          const data = await response.json();
+        // Add listener to update status when mode changes
+        document.querySelectorAll('input[name="exportMode"]').forEach(radio => {
+          radio.addEventListener('change', () => {
+            const mode = getSelectedMode();
+            updateStatusMessage(result, mode);
+          });
+        });
 
-          // Get total count from headers or estimate
-          const productCount = data.products ? data.products.length : 0;
-
-          if (result.collectionHandle) {
-            updateStatus(`✓ Shopify Store Detected | Collection: ${result.collectionHandle}`, 'success');
-          } else {
-            updateStatus(`✓ Shopify Store Detected | Ready to scrape`, 'success');
-          }
-          scrapeBtn.disabled = false;
-        } catch (e) {
-          updateStatus('✓ Shopify Store Detected | Ready to scrape', 'success');
-          scrapeBtn.disabled = false;
-        }
+        // Initial status update
+        updateStatusMessage(result, getSelectedMode());
+        scrapeBtn.disabled = false;
       } else {
         updateStatus('⚠ Not a Shopify store - Please visit a Shopify store', 'error');
         scrapeBtn.disabled = true;
@@ -231,6 +231,22 @@ document.addEventListener('DOMContentLoaded', async function () {
       console.error('Detection error:', error);
       updateStatus('Ready to export products', '');
       scrapeBtn.disabled = false;
+    }
+  }
+
+  function updateStatusMessage(result, mode) {
+    if (mode === 'single') {
+      if (result.isProductPage && result.productHandle) {
+        updateStatus(`✓ Product Page Detected | Ready to export: ${result.productHandle.replace(/-/g, ' ')}`, 'success');
+      } else {
+        updateStatus('⚠ Please navigate to a product page to export single product', 'warning');
+      }
+    } else if (result.collectionHandle) {
+      updateStatus(`✓ Shopify Store Detected | Collection: ${result.collectionHandle}`, 'success');
+    } else if (result.isProductPage) {
+      updateStatus(`✓ Shopify Store Detected | On product page`, 'success');
+    } else {
+      updateStatus(`✓ Shopify Store Detected | Ready to scrape`, 'success');
     }
   }
 

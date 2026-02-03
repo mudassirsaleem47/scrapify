@@ -23,7 +23,10 @@
     try {
       let allProducts;
 
-      if (exportMode === 'all') {
+      if (exportMode === 'single') {
+        // Fetch single product from current page
+        allProducts = await fetchSingleProduct();
+      } else if (exportMode === 'all') {
         // Fetch ALL products from the store
         allProducts = await fetchAllProductsFromAPI();
       } else {
@@ -193,6 +196,96 @@ async function fetchAllProductsFromAPI() {
   await enrichProductsWithCollections(allProducts);
 
   return allProducts;
+}
+
+// Fetch single product from current page
+async function fetchSingleProduct() {
+  console.log('Fetching single product from current page...');
+
+  // Check if we're on a product page
+  const urlPath = window.location.pathname;
+  const productMatch = urlPath.match(/\/products\/([^\/\?]+)/);
+
+  if (!productMatch) {
+    throw new Error('Not on a product page. Please navigate to a product page to export a single product.');
+  }
+
+  const productHandle = productMatch[1];
+  console.log('Product handle:', productHandle);
+
+  try {
+    const productUrl = `/products/${productHandle}.json`;
+    const response = await fetch(productUrl);
+
+    if (!response.ok) {
+      throw new Error('Could not fetch product data');
+    }
+
+    const data = await response.json();
+    const product = data.product;
+
+    // Get collection title from page if available
+    let collectionTitle = '';
+    try {
+      const breadcrumbLinks = document.querySelectorAll('a[href*="/collections/"]');
+      if (breadcrumbLinks.length > 0) {
+        collectionTitle = breadcrumbLinks[0].textContent.trim();
+      }
+    } catch (e) {
+      console.log('Could not get collection from breadcrumb');
+    }
+
+    const processedProduct = {
+      title: product.title,
+      description: product.body_html || '',
+      vendor: product.vendor || '',
+      type: product.product_type || '',
+      tags: product.tags ? product.tags.join(', ') : '',
+      handle: product.handle,
+      collections: collectionTitle ? [collectionTitle] : [],
+      images: product.images ? product.images.map(img => img.src) : [],
+      variants: product.variants ? product.variants.map(variant => {
+        // Get variant-specific image or fallback to first product image
+        let variantImage = '';
+        if (variant.image_id) {
+          const matchedImage = product.images.find(img => img.id === variant.image_id);
+          variantImage = matchedImage ? matchedImage.src : '';
+        }
+        // If no variant-specific image, use first product image
+        if (!variantImage && product.images && product.images.length > 0) {
+          variantImage = product.images[0].src;
+        }
+
+        return {
+          option1Name: product.options[0] ? product.options[0].name : '',
+          option1Value: variant.option1 || '',
+          option2Name: product.options[1] ? product.options[1].name : '',
+          option2Value: variant.option2 || '',
+          option3Name: product.options[2] ? product.options[2].name : '',
+          option3Value: variant.option3 || '',
+          price: variant.price,
+          compareAtPrice: variant.compare_at_price || '',
+          sku: variant.sku || '',
+          barcode: variant.barcode || '',
+          weight: variant.weight || '',
+          image: variantImage
+        };
+      }) : []
+    };
+
+    // If no variants, add product price
+    if (processedProduct.variants.length === 0 && product.variants && product.variants[0]) {
+      processedProduct.price = product.variants[0].price;
+      processedProduct.compareAtPrice = product.variants[0].compare_at_price || '';
+    }
+
+    console.log('Single product fetched successfully:', processedProduct.title);
+    return [processedProduct]; // Return as array to match other functions
+
+  } catch (error) {
+    console.error('Error fetching single product:', error);
+    throw error;
+  }
 }
 
 // Enrich products with collection information
